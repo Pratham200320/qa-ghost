@@ -59,35 +59,49 @@ async def serve_video(filename: str):
 
 @app.post("/scan")
 async def scan(request: Request):
+    import json as _json
+    from fastapi.responses import StreamingResponse as _SR
     data = await request.json()
     url  = data.get("url", "").strip()
     if not url:
         return JSONResponse({"error": "No URL provided"}, status_code=400)
     if not url.startswith("http"):
         url = "https://" + url
-    try:
-        loop = asyncio.get_event_loop()
-        d = await loop.run_in_executor(None, run_qa_scan, url)
-        video_path = d.get("video_path")
-        voice_path = d.get("voice_audio_path")
-        return {
-            "results":              d["results"],
-            "actions_log":          d["actions_log"],
-            "video_filename":       os.path.basename(video_path) if video_path else None,
-            "voice_summary":        d["voice_summary"],
-            "voice_filename":       os.path.basename(voice_path) if voice_path else None,
-            "healed_bugs":          d.get("healed_bugs", []),
-            "accessibility_report": d.get("accessibility_report", {}),
-            "core_web_vitals":      d.get("core_web_vitals", {}),
-            "viewports":            d.get("viewports", {}),
-            "network_issues":       d.get("network_issues", []),
-            "health_score":         d.get("health_score", 0),
-            "health_grade":         d.get("health_grade", "F"),
-            "score_breakdown":      d.get("score_breakdown", []),
-        }
-    except Exception as e:
-        import traceback; traceback.print_exc()
-        return JSONResponse({"error": str(e)}, status_code=500)
+
+    async def event_stream():
+        try:
+            loop = asyncio.get_event_loop()
+            fut = loop.run_in_executor(None, run_qa_scan, url)
+            while not fut.done():
+                yield ": keepalive\n\n"
+                await asyncio.sleep(5)
+            d = await fut
+            video_path = d.get("video_path")
+            voice_path = d.get("voice_audio_path")
+            result = {
+                "results":              d["results"],
+                "actions_log":          d["actions_log"],
+                "video_filename":       os.path.basename(video_path) if video_path else None,
+                "voice_summary":        d["voice_summary"],
+                "voice_filename":       os.path.basename(voice_path) if voice_path else None,
+                "healed_bugs":          d.get("healed_bugs", []),
+                "accessibility_report": d.get("accessibility_report", {}),
+                "core_web_vitals":      d.get("core_web_vitals", {}),
+                "viewports":            d.get("viewports", {}),
+                "network_issues":       d.get("network_issues", []),
+                "health_score":         d.get("health_score", 0),
+                "health_grade":         d.get("health_grade", "F"),
+                "score_breakdown":      d.get("score_breakdown", []),
+            }
+            yield f"data: {_json.dumps(result)}\n\n"
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            yield f"data: {_json.dumps({'error': str(e)})}\n\n"
+
+    return _SR(event_stream(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
+    })
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

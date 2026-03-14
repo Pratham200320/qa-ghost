@@ -367,8 +367,8 @@ footer { border-top:1px solid var(--border); padding:44px 36px 36px; max-width:1
         <div>
           <div class="dname">Pratham Sajnani</div>
           <div class="dlinks">
-            <a class="dlink" href="https://github.com/Pratham200320" target="_blank">GitHub</a>
-            <a class="dlink" href="https://www.linkedin.com/in/pratham-sajnani/" target="_blank">LinkedIn</a>
+            <a class="dlink" href="https://github.com/PRATHAM_GITHUB" target="_blank">GitHub</a>
+            <a class="dlink" href="https://linkedin.com/in/PRATHAM_LINKEDIN" target="_blank">LinkedIn</a>
           </div>
         </div>
       </div>
@@ -377,8 +377,8 @@ footer { border-top:1px solid var(--border); padding:44px 36px 36px; max-width:1
         <div>
           <div class="dname">Rohan Kumar Singh</div>
           <div class="dlinks">
-            <a class="dlink" href="https://github.com/RohanKSingh2002" target="_blank">GitHub</a>
-            <a class="dlink" href="https://www.linkedin.com/in/rohan-kumar-singh-762b57328/" target="_blank">LinkedIn</a>
+            <a class="dlink" href="https://github.com/ROHAN_GITHUB" target="_blank">GitHub</a>
+            <a class="dlink" href="https://linkedin.com/in/ROHAN_LINKEDIN" target="_blank">LinkedIn</a>
           </div>
         </div>
       </div>
@@ -1070,28 +1070,47 @@ function startScan() {
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({url: url})
   })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    clearInterval(fakeLogTimer);
-    document.getElementById('prog').style.width = '100%';
-    setTimeout(function() {
-      document.getElementById('loadPanel').classList.remove('on');
-      if (data.error) {
-        document.getElementById('errMsg').textContent = data.error;
-        document.getElementById('errBox').classList.add('on');
-        console.error('Scan error:', data);
-      } else {
-        displayResults(data);
-      }
-    }, 400);
+  .then(function(res) {
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+    function read() {
+      reader.read().then(function(result) {
+        if (result.done) {
+          document.getElementById('scanBtn').disabled = false;
+          return;
+        }
+        buffer += decoder.decode(result.value, {stream: true});
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        lines.forEach(function(line) {
+          if (line.startsWith('data: ')) {
+            try {
+              var data = JSON.parse(line.slice(6));
+              clearInterval(fakeLogTimer);
+              document.getElementById('prog').style.width = '100%';
+              setTimeout(function() {
+                document.getElementById('loadPanel').classList.remove('on');
+                if (data.error) {
+                  document.getElementById('errMsg').textContent = data.error;
+                  document.getElementById('errBox').classList.add('on');
+                } else {
+                  displayResults(data);
+                }
+              }, 400);
+            } catch(e) { console.error('Parse error:', e); }
+          }
+        });
+        read();
+      });
+    }
+    read();
   })
   .catch(function(err) {
     clearInterval(fakeLogTimer);
     document.getElementById('loadPanel').classList.remove('on');
     document.getElementById('errMsg').textContent = 'Connection error: ' + err.message + ' — Make sure the server is running: python app.py';
     document.getElementById('errBox').classList.add('on');
-  })
-  .finally(function() {
     document.getElementById('scanBtn').disabled = false;
   });
 }
