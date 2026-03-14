@@ -1,0 +1,9 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+playwright==1.44.0
+google-genai==0.8.0
+Pillow==10.3.0
+python-dotenv==1.0.1
+python-multipart==0.0.9
+imageio[ffmpeg]==2.34.2
+numpy==1.26.4

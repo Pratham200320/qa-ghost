@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>QA Ghost — AI QA Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&amp;family=IBM+Plex+Mono:wght@300;400;500&amp;family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&amp;display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --bg:#07070f; --bg2:#0c0c1a; --bg3:#111124;
+  --surface:#14142a; --surface2:#1a1a32;
+  --border:#ffffff09; --border2:#ffffff13; --border3:#ffffff22;
+  --text:#e8e8f8; --text2:#8888aa; --text3:#44446a;
+  --accent:#6c5ce7; --accent2:#a29bfe; --accent3:#d0ccff;
+  --red:#ff4757; --red2:#ff6b78; --red-bg:#ff475712; --red-border:#ff475728;
+  --amber:#ffa502; --amber2:#ffbe57; --amber-bg:#ffa50212; --amber-border:#ffa50228;
+  --green:#00b894; --green2:#00d2a8; --green-bg:#00b89412; --green-border:#00b89428;
+  --blue:#0984e3; --blue2:#74b9ff; --blue-bg:#0984e312; --blue-border:#0984e328;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+/* NAV */
+nav { position:fixed; top:0; left:0; right:0; z-index:200; height:58px; display:flex; align-items:center; justify-content:space-between; padding:0 36px; background:rgba(7,7,15,0.92); backdrop-filter:blur(20px); border-bottom:1px solid var(--border2); }
+.nav-left { display:flex; align-items:center; gap:10px; }
+.nav-mark { width:30px; height:30px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+.nav-name { font-family:'Syne',sans-serif; font-weight:800; font-size:16px; letter-spacing:-0.3px; }
+.nav-name span { color:var(--accent2); }
+.npill { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 8px; border-radius:5px; border:1px solid var(--border3); color:var(--text3); }
+.npill.live { border-color:var(--green-border); color:var(--green2); background:var(--green-bg); }
+.npill.live::before { content:''; display:inline-block; width:5px; height:5px; background:var(--green2); border-radius:50%; margin-right:5px; animation:pulse 2s infinite; }
+
+/* HERO */
+.hero { padding:118px 36px 70px; max-width:880px; margin:0 auto; }
+.eyebrow { display:inline-flex; align-items:center; gap:7px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent2); background:rgba(108,92,231,0.05); border:1px solid rgba(108,92,231,0.1); padding:5px 13px; border-radius:20px; margin-bottom:26px; letter-spacing:0.5px; text-transform:uppercase; }
+h1 { font-family:'Syne',sans-serif; font-size:clamp(40px,6vw,74px); font-weight:800; line-height:1; letter-spacing:-3px; margin-bottom:18px; }
+h1 em { font-style:normal; background:linear-gradient(90deg,var(--accent2),var(--green2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero-sub { font-size:16px; color:var(--text2); line-height:1.8; max-width:560px; margin-bottom:40px; font-weight:300; }
+.hero-sub strong { color:var(--text); font-weight:500; }
+
+/* SCAN INPUT */
+.scan-wrap { display:flex; background:var(--surface); border:1px solid var(--border3); border-radius:13px; overflow:hidden; max-width:600px; transition:border-color .2s,box-shadow .2s; }
+.scan-wrap:focus-within { border-color:rgba(108,92,231,0.3); box-shadow:0 0 0 3px rgba(108,92,231,0.06); }
+.scan-pre { display:flex; align-items:center; padding:0 14px; color:var(--text3); font-family:'IBM Plex Mono',monospace; font-size:12px; border-right:1px solid var(--border2); background:var(--bg2); flex-shrink:0; }
+.scan-in { flex:1; background:transparent; border:none; outline:none; padding:15px 16px; font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text); min-width:0; }
+.scan-in::placeholder { color:var(--text3); }
+.scan-btn { background:var(--accent); border:none; padding:14px 26px; color:white; font-family:'Syne',sans-serif; font-weight:700; font-size:13px; cursor:pointer; transition:background .2s; flex-shrink:0; }
+.scan-btn:hover { background:#7c6bf5; }
+.scan-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:24px; }
+.chip { display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text3); padding:4px 11px; border:1px solid var(--border2); border-radius:5px; }
+.chip .dot { width:5px; height:5px; border-radius:50%; }
+
+/* LOADING */
+.loading { display:none; max-width:560px; margin:0 auto; padding:0 36px 80px; }
+.loading.on { display:block; }
+.ld-head { display:flex; align-items:center; gap:14px; margin-bottom:28px; }
+.spinner { width:34px; height:34px; border:2.5px solid var(--border2); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; flex-shrink:0; }
+.ld-title { font-family:'Syne',sans-serif; font-weight:700; font-size:17px; }
+.ld-sub { font-size:12px; color:var(--text2); margin-top:2px; }
+.prog-bar { height:2px; background:var(--border2); border-radius:2px; margin-bottom:24px; overflow:hidden; }
+.prog-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--green2)); width:0; transition:width 1s ease; }
+.steps { display:flex; flex-direction:column; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+.step { display:flex; align-items:center; gap:11px; padding:12px 16px; border-bottom:1px solid var(--border); font-size:13px; }
+.step:last-child { border-bottom:none; }
+.step.done { color:var(--green2); }
+.step.active { color:var(--accent3); background:rgba(108,92,231,0.04); }
+.step.wait { color:var(--text3); }
+.sdot { width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.step.active .sdot { animation:pulse 1s infinite; }
+.livelog { margin-top:14px; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:11px 13px; max-height:100px; overflow-y:auto; }
+.livelog-head { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; }
+.logline { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text2); padding:2px 0; line-height:1.6; }
+
+/* ERROR */
+.errbox { display:none; max-width:480px; margin:0 auto 60px; padding:0 36px; }
+.errbox.on { display:block; }
+.errin { background:var(--red-bg); border:1px solid var(--red-border); border-radius:12px; padding:22px; display:flex; gap:13px; }
+.errtitle { font-family:'Syne',sans-serif; font-weight:700; color:var(--red2); margin-bottom:4px; }
+.errmsg { font-size:13px; color:var(--text2); }
+
+/* RESULTS */
+.results { display:none; max-width:1080px; margin:0 auto; padding:0 36px 100px; }
+.results.on { display:block; }
+
+/* SECTIONS */
+.sec { margin-bottom:36px; }
+.sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.sec-title { font-family:'Syne',sans-serif; font-weight:700; font-size:14px; display:flex; align-items:center; gap:9px; }
+.ico { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:13px; flex-shrink:0; }
+.ico.p { background:rgba(108,92,231,0.1); border:1px solid rgba(108,92,231,0.13); }
+.ico.g { background:var(--green-bg); border:1px solid var(--green-border); }
+.ico.b { background:var(--blue-bg); border:1px solid var(--blue-border); }
+.ico.a { background:var(--amber-bg); border:1px solid var(--amber-border); }
+.ico.r { background:var(--red-bg); border:1px solid var(--red-border); }
+.badge { font-family:'IBM Plex Mono',monospace; font-size:11px; padding:3px 9px; border-radius:5px; }
+.bg { background:var(--green-bg); color:var(--green2); border:1px solid var(--green-border); }
+.br { background:var(--red-bg); color:var(--red2); border:1px solid var(--red-border); }
+.ba { background:var(--amber-bg); color:var(--amber2); border:1px solid var(--amber-border); }
+.bb { background:var(--blue-bg); color:var(--blue2); border:1px solid var(--blue-border); }
+.bp { background:rgba(108,92,231,0.07); color:var(--accent2); border:1px solid rgba(108,92,231,0.1); }
+
+/* HEALTH SCORE */
+.health-card { background:var(--surface); border:1px solid var(--border2); border-radius:16px; padding:32px; display:grid; grid-template-columns:auto 1fr auto; gap:28px; align-items:center; }
+.ring-wrap { position:relative; width:104px; height:104px; flex-shrink:0; }
+.ring-wrap svg { transform:rotate(-90deg); }
+.ring-center { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+.ring-num { font-family:'Syne',sans-serif; font-size:30px; font-weight:800; line-height:1; }
+.ring-lbl { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-transform:uppercase; margin-top:1px; }
+.grade-row { display:flex; align-items:center; gap:11px; margin-bottom:13px; }
+.grade { font-family:'Syne',sans-serif; font-size:44px; font-weight:800; line-height:1; }
+.grade.A { color:var(--green2); } .grade.B { color:#a8e063; } .grade.C { color:var(--amber2); } .grade.D { color:var(--amber); } .grade.F { color:var(--red2); }
+.verdict { font-size:13px; color:var(--text2); }
+.breakdown { display:flex; flex-direction:column; gap:7px; }
+.brow { display:flex; align-items:center; gap:9px; }
+.blbl { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text3); width:200px; flex-shrink:0; }
+.bbar { flex:1; height:4px; background:var(--border2); border-radius:4px; overflow:hidden; }
+.bfill { height:100%; border-radius:4px; transition:width 1.1s cubic-bezier(.23,1,.32,1); }
+.bscore { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text2); width:28px; text-align:right; flex-shrink:0; }
+.health-stats { display:flex; flex-direction:column; gap:10px; flex-shrink:0; }
+.hstat { text-align:center; background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:12px 18px; }
+.hstat-n { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; line-height:1; margin-bottom:3px; }
+.hstat-l { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-transform:uppercase; }
+
+/* AGENT JOURNEY */
+.agent-step { display:flex; align-items:flex-start; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:11px 14px; }
+.agent-icon { width:22px; height:22px; background:var(--bg2); border:1px solid var(--border2); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; flex-shrink:0; }
+
+/* VOICE */
+.vcard { background:var(--surface); border:1px solid var(--border2); border-radius:13px; padding:22px; display:flex; align-items:center; gap:18px; }
+.vico { width:44px; height:44px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; transition:box-shadow .3s; }
+.vico.playing { animation:vpulse 1.5s ease infinite; }
+.vtranscript { font-size:12px; color:var(--text2); font-style:italic; line-height:1.7; margin-top:7px; }
+.wave { display:none; align-items:flex-end; gap:2px; height:18px; }
+.wave.on { display:flex; }
+.wave span { display:block; width:2px; background:var(--accent2); border-radius:2px; animation:wv .9s ease-in-out infinite; }
+.wave span:nth-child(2) { animation-delay:.1s; } .wave span:nth-child(3) { animation-delay:.2s; } .wave span:nth-child(4) { animation-delay:.3s; } .wave span:nth-child(5) { animation-delay:.4s; }
+.vbtn { display:inline-flex; align-items:center; gap:5px; padding:8px 16px; border-radius:7px; border:none; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; cursor:pointer; transition:all .2s; }
+.vbtn-play { background:var(--accent); color:white; }
+.vbtn-play:hover { background:#7c6bf5; }
+.vbtn-stop { background:var(--red-bg); color:var(--red2); border:1px solid var(--red-border); display:none; }
+.vbtn-stop.on { display:inline-flex; }
+
+/* VIDEO */
+.vid-card { background:var(--surface); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
+.vid-head { padding:13px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.vid-title { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; display:flex; align-items:center; gap:9px; }
+.rec { display:flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--red2); background:var(--red-bg); border:1px solid var(--red-border); padding:3px 8px; border-radius:4px; text-transform:uppercase; }
+.rec::before { content:''; width:5px; height:5px; background:var(--red2); border-radius:50%; animation:pulse 1.2s infinite; }
+video { width:100%; display:block; background:#000; }
+
+/* SELF-HEALING */
+.hcard { background:var(--surface); border:1px solid var(--green-border); border-radius:13px; overflow:hidden; }
+.hcard-head { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:11px; }
+.hnum { width:22px; height:22px; background:var(--green); border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:11px; font-weight:800; color:white; flex-shrink:0; }
+.hname { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; flex:1; }
+.htag { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 8px; border-radius:4px; }
+.htag-fix { background:var(--green-bg); color:var(--green2); border:1px solid var(--green-border); }
+.htag-diff { background:var(--blue-bg); color:var(--blue2); border:1px solid var(--blue-border); }
+.hshots { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; padding:14px 18px; }
+.hslot { display:flex; flex-direction:column; gap:6px; }
+.hslbl { font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:1px; }
+.hslbl.before { color:var(--red2); } .hslbl.after { color:var(--green2); } .hslbl.diff { color:var(--amber2); }
+.hsimg { width:100%; border-radius:7px; border:1px solid var(--border); background:var(--bg3); min-height:75px; object-fit:cover; }
+.hdetails { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 18px 14px; }
+.hbox { background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:11px; }
+.hblbl { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-transform:uppercase; margin-bottom:5px; }
+.hbval { font-size:12px; color:var(--text2); line-height:1.6; }
+.hbcode { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent2); line-height:1.6; word-break:break-all; }
+
+/* VITALS */
+.vitals-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:11px; }
+.vcrd { background:var(--surface); border:1px solid var(--border); border-radius:13px; padding:18px; }
+.vcrd.good { border-color:var(--green-border); } .vcrd.needs-improvement { border-color:var(--amber-border); } .vcrd.poor { border-color:var(--red-border); }
+.vname { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; margin-bottom:11px; }
+.vval { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; line-height:1; margin-bottom:5px; }
+.vcrd.good .vval { color:var(--green2); } .vcrd.needs-improvement .vval { color:var(--amber2); } .vcrd.poor .vval { color:var(--red2); }
+.vunit { font-size:13px; font-weight:400; }
+.vthresh { font-size:11px; color:var(--text3); line-height:1.5; }
+.vbar { height:3px; background:var(--border2); border-radius:3px; margin-top:12px; overflow:hidden; }
+.vfill { height:100%; border-radius:3px; }
+.vcrd.good .vfill { background:var(--green2); } .vcrd.needs-improvement .vfill { background:var(--amber2); } .vcrd.poor .vfill { background:var(--red2); }
+
+/* AXE */
+.axe-sum { display:grid; grid-template-columns:repeat(4,1fr); gap:9px; margin-bottom:14px; }
+.acrd { background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:13px; text-align:center; }
+.acrd.critical { border-color:var(--red-border); } .acrd.serious { border-color:var(--red-border); opacity:.8; } .acrd.moderate { border-color:var(--amber-border); } .acrd.minor { border-color:var(--blue-border); }
+.acnt { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; margin-bottom:3px; }
+.acrd.critical .acnt,.acrd.serious .acnt { color:var(--red2); } .acrd.moderate .acnt { color:var(--amber2); } .acrd.minor .acnt { color:var(--blue2); }
+.albl { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-transform:uppercase; }
+.viol { background:var(--surface); border:1px solid var(--border); border-radius:11px; padding:15px 17px; display:flex; align-items:flex-start; gap:12px; margin-bottom:7px; }
+.viol-imp { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:3px 7px; border-radius:4px; text-transform:uppercase; letter-spacing:.5px; flex-shrink:0; margin-top:1px; }
+.imp-critical,.imp-serious { background:var(--red-bg); color:var(--red2); border:1px solid var(--red-border); }
+.imp-moderate { background:var(--amber-bg); color:var(--amber2); border:1px solid var(--amber-border); }
+.imp-minor { background:var(--blue-bg); color:var(--blue2); border:1px solid var(--blue-border); }
+.viol-id { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--accent2); margin-bottom:3px; }
+.viol-desc { font-size:13px; color:var(--text); margin-bottom:5px; line-height:1.5; }
+.viol-meta { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.vtag { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 6px; border:1px solid var(--border2); border-radius:3px; color:var(--text3); }
+.vlink { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--accent2); text-decoration:none; opacity:.7; }
+.vlink:hover { opacity:1; }
+
+/* VIEWPORTS */
+.vp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.vp-card { background:var(--surface); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
+.vp-head { padding:12px 15px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+.vp-name { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; }
+.vp-ok { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:4px; background:var(--green-bg); color:var(--green2); border:1px solid var(--green-border); }
+.vp-warn { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:4px; background:var(--amber-bg); color:var(--amber2); border:1px solid var(--amber-border); }
+.vp-fail { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:4px; background:var(--red-bg); color:var(--red2); border:1px solid var(--red-border); }
+.vp-img { width:100%; display:block; background:var(--bg3); min-height:150px; object-fit:cover; }
+.vp-meta { padding:9px 15px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); }
+
+/* PAGES */
+.pcard { background:var(--surface); border:1px solid var(--border); border-radius:13px; overflow:hidden; margin-bottom:7px; }
+.pcard-top { display:flex; align-items:center; gap:14px; padding:16px 20px; cursor:pointer; user-select:none; transition:background .2s; }
+.pcard-top:hover { background:var(--bg2); }
+.pnum { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text3); flex-shrink:0; width:48px; }
+.pinfo { flex:1; min-width:0; }
+.ptitle { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.purl { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ppills { display:flex; gap:5px; flex-shrink:0; }
+.pp { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 7px; border-radius:4px; }
+.pp-r { background:var(--red-bg); color:var(--red2); border:1px solid var(--red-border); }
+.pp-a { background:var(--amber-bg); color:var(--amber2); border:1px solid var(--amber-border); }
+.pp-g { background:var(--green-bg); color:var(--green2); border:1px solid var(--green-border); }
+.pscore { font-family:'Syne',sans-serif; font-size:15px; font-weight:800; flex-shrink:0; width:36px; text-align:right; }
+.expand { color:var(--text3); font-size:10px; flex-shrink:0; transition:transform .3s; }
+.pcard.open .expand { transform:rotate(180deg); }
+.pbody { display:none; border-top:1px solid var(--border); padding:18px 20px; }
+.pcard.open .pbody { display:block; }
+.psummary { font-size:12px; color:var(--text2); font-style:italic; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+.bsec-lbl { font-family:'IBM Plex Mono',monospace; font-size:10px; text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; margin-top:12px; }
+.bsec-lbl:first-child { margin-top:0; }
+.bitem { background:var(--bg2); border:1px solid var(--border); border-left:3px solid transparent; border-radius:9px; padding:12px 14px; margin-bottom:6px; }
+.bitem.crit { border-left-color:var(--red); } .bitem.med { border-left-color:var(--amber); } .bitem.low { border-left-color:var(--green); }
+.bname { font-family:'Syne',sans-serif; font-size:12px; font-weight:600; margin-bottom:7px; display:flex; align-items:center; gap:7px; }
+.fixed-tag { font-family:'IBM Plex Mono',monospace; font-size:10px; padding:2px 6px; border-radius:3px; background:var(--green-bg); color:var(--green2); border:1px solid var(--green-border); }
+.bgrid { display:grid; grid-template-columns:70px 1fr; row-gap:3px; column-gap:10px; font-size:12px; }
+.bkey { font-family:'IBM Plex Mono',monospace; color:var(--text3); font-size:11px; }
+.bval { color:var(--text2); } .bfix { color:var(--accent2); }
+
+/* PDF BTN */
+.pdf-btn { display:inline-flex; align-items:center; gap:7px; padding:10px 20px; background:var(--surface); border:1px solid var(--border2); border-radius:9px; color:var(--text2); font-family:'Syne',sans-serif; font-weight:600; font-size:12px; cursor:pointer; transition:all .2s; margin-bottom:26px; }
+.pdf-btn:hover { border-color:rgba(108,92,231,0.3); color:var(--text); }
+
+/* FOOTER */
+footer { border-top:1px solid var(--border); padding:44px 36px 36px; max-width:1080px; margin:0 auto; }
+.footer-row { display:flex; align-items:flex-start; justify-content:space-between; gap:36px; flex-wrap:wrap; margin-bottom:36px; }
+.flogo { display:flex; align-items:center; gap:8px; font-family:'Syne',sans-serif; font-weight:800; font-size:15px; margin-bottom:8px; }
+.footer-brand p { font-size:12px; color:var(--text3); line-height:1.7; max-width:280px; }
+.team { display:flex; gap:13px; flex-wrap:wrap; }
+.dev { display:flex; align-items:center; gap:11px; background:var(--surface); border:1px solid var(--border2); border-radius:11px; padding:12px 18px; text-decoration:none; transition:border-color .2s; }
+.dev:hover { border-color:var(--border3); }
+.davatar { width:38px; height:38px; border-radius:9px; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:800; font-size:14px; color:white; flex-shrink:0; }
+.dname { font-family:'Syne',sans-serif; font-weight:700; font-size:13px; color:var(--text); margin-bottom:4px; }
+.dlinks { display:flex; gap:5px; }
+.dlink { font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text3); text-decoration:none; padding:2px 6px; border:1px solid var(--border2); border-radius:3px; }
+.dlink:hover { color:var(--accent2); }
+.fcopy { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text3); }
+
+/* LOG */
+.log-card { background:var(--surface); border:1px solid var(--border); border-radius:13px; overflow:hidden; }
+.log-tog { display:flex; align-items:center; justify-content:space-between; padding:13px 18px; cursor:pointer; user-select:none; }
+.log-tog:hover { background:var(--bg2); }
+.log-body { display:none; border-top:1px solid var(--border); padding:12px 18px; max-height:200px; overflow-y:auto; }
+.log-card.open .log-body { display:block; }
+.log-card.open .expand { transform:rotate(180deg); }
+.logln { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text2); padding:2px 0; border-bottom:1px solid var(--border); line-height:1.6; }
+
+/* ANIMATIONS */
+@keyframes spin { to { transform:rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+@keyframes vpulse { 0%,100%{box-shadow:0 0 0 0 rgba(108,92,231,0.4);} 50%{box-shadow:0 0 0 10px transparent;} }
+@keyframes wv { 0%,100%{transform:scaleY(1);} 50%{transform:scaleY(.3);} }
+.wave span:nth-child(1){height:5px;} .wave span:nth-child(2){height:12px;} .wave span:nth-child(3){height:18px;} .wave span:nth-child(4){height:10px;} .wave span:nth-child(5){height:7px;}
+.fade-up { opacity:0; transform:translateY(14px); }
+.fade-up.in { opacity:1; transform:none; transition:opacity .5s ease,transform .5s ease; }
+
+@media(max-width:768px) {
+  nav,footer,.hero,.results,.loading,.errbox { padding-left:18px; padding-right:18px; }
+  .vitals-grid,.axe-sum,.vp-grid { grid-template-columns:repeat(2,1fr); }
+  .health-card { grid-template-columns:1fr; }
+  .hshots { grid-template-columns:1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="nav-mark">👻</div>
+    <div class="nav-name">QA<span>Ghost</span></div>
+    <div class="npill live">Gemini AI</div>
+    <div class="npill">WCAG 2.1</div>
+    <div class="npill">Playwright</div>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="eyebrow">✦ Professional AI QA Automation</div>
+  <h1>Find every bug.<br><em>Auto-fix them.</em></h1>
+  <p class="hero-sub">QA Ghost runs a <strong>full agentic audit</strong> — Gemini navigates your app autonomously, detects bugs visually, injects self-healing fixes, and produces a professional report with voice summary.</p>
+  <div class="scan-wrap">
+    <div class="scan-pre">URL</div>
+    <input class="scan-in" id="urlIn" type="text" placeholder="https://books.toscrape.com" autocomplete="off" spellcheck="false">
+    <button class="scan-btn" id="scanBtn" onclick="startScan()">Run Audit →</button>
+  </div>
+  <div class="chips">
+    <div class="chip"><div class="dot" style="background:var(--accent2)"></div>Gemini Vision</div>
+    <div class="chip"><div class="dot" style="background:var(--red2)"></div>axe-core WCAG 2.1</div>
+    <div class="chip"><div class="dot" style="background:var(--green2)"></div>Core Web Vitals</div>
+    <div class="chip"><div class="dot" style="background:var(--blue2)"></div>Multi-Viewport</div>
+    <div class="chip"><div class="dot" style="background:var(--amber2)"></div>Self-Healing</div>
+    <div class="chip"><div class="dot" style="background:var(--green2)"></div>Agentic Loop</div>
+  </div>
+</section>
+
+<div class="loading" id="loadPanel">
+  <div class="ld-head">
+    <div class="spinner"></div>
+    <div>
+      <div class="ld-title">Running agentic QA audit…</div>
+      <div class="ld-sub">Gemini navigating · axe-core · Core Web Vitals · Self-Healing</div>
+    </div>
+  </div>
+  <div class="prog-bar"><div class="prog-fill" id="prog"></div></div>
+  <div class="steps">
+    <div class="step wait" id="st1"><div class="sdot"></div>Launching Chromium with video recording</div>
+    <div class="step wait" id="st2"><div class="sdot"></div>Multi-viewport scan — Desktop · Tablet · Mobile</div>
+    <div class="step wait" id="st3"><div class="sdot"></div>Collecting Core Web Vitals (LCP · CLS · TBT · TTFB)</div>
+    <div class="step wait" id="st4"><div class="sdot"></div>axe-core WCAG 2.1 audit (78 rules)</div>
+    <div class="step wait" id="st5"><div class="sdot"></div>Gemini Vision analyzing main page</div>
+    <div class="step wait" id="st6"><div class="sdot"></div>🤖 Agentic loop — Gemini navigating and discovering bugs</div>
+    <div class="step wait" id="st7"><div class="sdot"></div>Self-healing — injecting JS fixes · pixel diff</div>
+    <div class="step wait" id="st8"><div class="sdot"></div>Health score · Gemini TTS voice summary</div>
+  </div>
+  <div class="livelog">
+    <div class="livelog-head">Agent log</div>
+    <div id="logBox"></div>
+  </div>
+</div>
+
+<div class="errbox" id="errBox">
+  <div class="errin">
+    <div style="font-size:18px;flex-shrink:0">⚠</div>
+    <div>
+      <div class="errtitle">Scan Failed</div>
+      <div class="errmsg" id="errMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="results" id="resWrap"></div>
+
+<footer>
+  <div class="footer-row">
+    <div class="footer-brand">
+      <div class="flogo"><div class="nav-mark" style="width:26px;height:26px;font-size:14px">👻</div>QA Ghost</div>
+      <p>Professional AI-powered QA automation. Built for the Google Gemini Hackathon 2026.</p>
+    </div>
+    <div class="team">
+      <div class="dev">
+        <div class="davatar">PS</div>
+        <div>
+          <div class="dname">Pratham Sajnani</div>
+          <div class="dlinks">
+            <a class="dlink" href="https://github.com/Pratham200320" target="_blank">GitHub</a>
+            <a class="dlink" href="https://www.linkedin.com/in/pratham-sajnani/" target="_blank">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+      <div class="dev">
+        <div class="davatar">RK</div>
+        <div>
+          <div class="dname">Rohan Kumar Singh</div>
+          <div class="dlinks">
+            <a class="dlink" href="https://github.com/RohanKSingh2002" target="_blank">GitHub</a>
+            <a class="dlink" href="https://www.linkedin.com/in/rohan-kumar-singh-762b57328/" target="_blank">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fcopy">Gemini 2.5 Flash · Google ADK · Playwright · axe-core · FastAPI · Cloud Run · QA Ghost © 2026</div>
+</footer>
+
+{% raw %}<script>
+var scanData = null;
+var voiceText = '';
+
+// ── Helpers ───────────────────────────────────────────────────
+function sColor(s) {
+  if (s === null || s === undefined) return 'var(--text3)';
+  return s >= 90 ? 'var(--green2)' : s >= 70 ? 'var(--amber2)' : 'var(--red2)';
+}
+function bColor(s) { return s >= 80 ? '#00d2a8' : s >= 60 ? '#ffa502' : '#ff4757'; }
+function vClass(k, v) {
+  if (v === null || v === undefined) return '';
+  var t = {lcp:[2500,4000],fcp:[1800,3000],cls:[0.1,0.25],tbt:[200,600],ttfb:[800,1800]}[k];
+  if (!t) return 'good';
+  return v <= t[0] ? 'good' : v <= t[1] ? 'needs-improvement' : 'poor';
+}
+function vLabel(k, v) {
+  if (v === null || v === undefined) return '— N/A (SPA/CSR)';
+  var c = vClass(k, v);
+  return c === 'good' ? '✓ Good' : c === 'needs-improvement' ? '⚠ Needs improvement' : '✗ Poor';
+}
+function vBarPct(k, v) {
+  if (v === null || v === undefined) return 0;
+  var m = {lcp:6000,fcp:5000,cls:0.5,tbt:1000,ttfb:3000};
+  return Math.min(100, (v / (m[k] || 1000)) * 100);
+}
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function countUp(el, target, dur) {
+  if (!el) return;
+  dur = dur || 900;
+  var s = performance.now();
+  (function tick(now) {
+    var p = Math.min((now - s) / dur, 1);
+    var e = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(e * target);
+    if (p < 1) requestAnimationFrame(tick);
+  })(s);
+}
+function reveal(c) {
+  c.querySelectorAll('.fade-up').forEach(function(el, i) {
+    el.style.transitionDelay = (i * 60) + 'ms';
+    requestAnimationFrame(function() { requestAnimationFrame(function() { el.classList.add('in'); }); });
+  });
+}
+
+// ── Audio ─────────────────────────────────────────────────────
+function playAudio() {
+  var a = document.getElementById('vAudio');
+  if (a) {
+    a.play();
+    document.getElementById('vIco').classList.add('playing');
+    document.getElementById('vWave').classList.add('on');
+    document.getElementById('vStop').classList.add('on');
+    document.getElementById('vPlay').style.display = 'none';
+    a.onended = stopAudio;
+  } else if (voiceText) {
+    fallbackSpeak(voiceText);
+  }
+}
+function fallbackSpeak(t) {
+  if (!window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(t);
+  u.rate = 0.95;
+  var voices = speechSynthesis.getVoices();
+  var v = voices.find(function(v) { return v.lang === 'en-US'; }) || voices[0];
+  if (v) u.voice = v;
+  u.onstart = function() {
+    var ico = document.getElementById('vIco');
+    var wave = document.getElementById('vWave');
+    var stop = document.getElementById('vStop');
+    var play = document.getElementById('vPlay');
+    if (ico) ico.classList.add('playing');
+    if (wave) wave.classList.add('on');
+    if (stop) stop.classList.add('on');
+    if (play) play.style.display = 'none';
+  };
+  u.onend = stopAudio;
+  u.onerror = stopAudio;
+  speechSynthesis.speak(u);
+}
+function stopAudio() {
+  var a = document.getElementById('vAudio');
+  if (a) { a.pause(); a.currentTime = 0; }
+  if (window.speechSynthesis) speechSynthesis.cancel();
+  var ico = document.getElementById('vIco');
+  var wave = document.getElementById('vWave');
+  var stop = document.getElementById('vStop');
+  var play = document.getElementById('vPlay');
+  if (ico) ico.classList.remove('playing');
+  if (wave) wave.classList.remove('on');
+  if (stop) stop.classList.remove('on');
+  if (play) play.style.display = '';
+}
+
+// ── Loading animation ─────────────────────────────────────────
+var STEP_TIMES = [500, 3000, 6000, 9000, 13000, 17000, 21000, 24000];
+var FAKE_LOGS = [
+  'Launching Chromium headless + video recording enabled',
+  'Desktop viewport (1280x800) captured',
+  'Tablet viewport (768x1024) captured',
+  'Mobile viewport (375x812) captured',
+  'Waiting for networkidle before CWV measurement...',
+  'Performance API: LCP, CLS, TBT, TTFB collected',
+  'axe-core 4.9 injected — WCAG 2.1 AA audit running...',
+  'Gemini Vision analyzing main page screenshot...',
+  'Handing control to Gemini agentic loop...',
+  'Agent step 1: perceiving UI, deciding next action...',
+  'Gemini decided: click category navigation link',
+  'Playwright executed — navigated to sub-page',
+  'Agent step 2: scanning new page for bugs...',
+  'Agent step 3: Gemini decided: done — sufficient coverage',
+  'Self-healing: Gemini generating JS fix code...',
+  'Fix injected via page.evaluate()',
+  'AFTER screenshot captured — pixel diff computed',
+  'Health score computed across 4 categories',
+  'Gemini TTS (Kore voice) generating summary...'
+];
+var fakeLogIdx = 0;
+var fakeLogTimer = null;
+
+function addLog(t) {
+  var c = document.getElementById('logBox');
+  if (!c) return;
+  var d = document.createElement('div');
+  d.className = 'logline';
+  d.textContent = t;
+  c.appendChild(d);
+  c.scrollTop = c.scrollHeight;
+}
+
+function animSteps() {
+  STEP_TIMES.forEach(function(t, i) {
+    setTimeout(function() {
+      if (i > 0) {
+        var prev = document.getElementById('st' + i);
+        if (prev) prev.className = 'step done';
+      }
+      var cur = document.getElementById('st' + (i + 1));
+      if (cur) cur.className = 'step active';
+      document.getElementById('prog').style.width = ((i + 1) / 8 * 100) + '%';
+    }, t);
+  });
+}
+
+// ── PDF Export ────────────────────────────────────────────────
+function exportPDF() {
+  try {
+    var jsPDFLib = window.jspdf;
+    if (!jsPDFLib || !jsPDFLib.jsPDF) { alert('PDF library not loaded yet, try again in a moment.'); return; }
+    var doc = new jsPDFLib.jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+    var d = scanData;
+    if (!d) { alert('No scan data. Run a scan first.'); return; }
+    var W = 210, pad = 18, y = pad;
+    function nl() { doc.addPage(); doc.setFillColor(7,7,15); doc.rect(0,0,W,297,'F'); y = pad; }
+    function chk(n) { if (y + (n||20) > 278) nl(); }
+    function safeText(t) { return String(t || '').replace(/[^\x20-\x7E]/g, ''); }
+    function sectionTitle(title) {
+      chk(16); y += 4;
+      doc.setFillColor(20,20,42); doc.rect(pad-2, y-5, W-pad*2+4, 10, 'F');
+      doc.setTextColor(162,155,254); doc.setFontSize(10); doc.setFont('helvetica','bold');
+      doc.text(safeText(title), pad, y); y += 8;
+    }
+
+    // ── Cover page ──
+    doc.setFillColor(7,7,15); doc.rect(0,0,W,297,'F');
+    doc.setFillColor(108,92,231); doc.rect(0,0,W,3,'F');
+    doc.setTextColor(162,155,254); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('QA GHOST — PROFESSIONAL AI QA REPORT', pad, y+10); y += 22;
+    doc.setTextColor(232,232,248); doc.setFontSize(22); doc.setFont('helvetica','bold');
+    doc.text('Audit Report', pad, y); y += 10;
+    doc.setTextColor(136,136,170); doc.setFontSize(9); doc.setFont('helvetica','normal');
+    var urlText = safeText((d.results && d.results[0]) ? (d.results[0].page_url || '') : '').substring(0,70);
+    doc.text(urlText, pad, y); y += 6;
+    doc.text('Generated: ' + new Date().toLocaleString(), pad, y); y += 16;
+
+    // ── Health Score ──
+    var sc = d.health_score || 0, gr = d.health_grade || 'F';
+    doc.setTextColor(162,155,254); doc.setFontSize(13); doc.setFont('helvetica','bold');
+    doc.text('OVERALL HEALTH SCORE', pad, y); y += 8;
+    doc.setTextColor(232,232,248); doc.setFontSize(18);
+    doc.text(sc + '/100 — Grade ' + gr, pad, y); y += 12;
+
+    // ── Score breakdown ──
+    if (d.score_breakdown && d.score_breakdown.length) {
+      doc.setTextColor(136,136,170); doc.setFontSize(8); doc.setFont('helvetica','bold');
+      doc.text('Score Breakdown', pad, y); y += 6;
+      doc.setFont('helvetica','normal');
+      (d.score_breakdown||[]).forEach(function(s) {
+        chk(6);
+        doc.setTextColor(200,200,220);
+        doc.text(safeText(s.category + ': ' + s.score + '/100 (weight: ' + Math.round(s.weight*100) + '%)'), pad+4, y);
+        y += 5;
+      });
+      y += 4;
+    }
+
+    // ── Summary stats ──
+    sectionTitle('Scan Summary');
+    var tc = (d.results||[]).reduce(function(a,r){return a+(r.critical_bugs||[]).length;},0);
+    var tm = (d.results||[]).reduce(function(a,r){return a+(r.medium_bugs||[]).length;},0);
+    var tl = (d.results||[]).reduce(function(a,r){return a+(r.low_bugs||[]).length;},0);
+    var cwv = d.core_web_vitals || {};
+    var axe = d.accessibility_report || {};
+    doc.setTextColor(200,200,220); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    [
+      'Pages scanned: ' + (d.results||[]).length,
+      'Critical bugs: ' + tc + ' | Medium: ' + tm + ' | Low: ' + tl,
+      'Bugs auto-fixed by self-healing: ' + (d.healed_bugs||[]).length,
+      'WCAG 2.1 violations (axe-core): ' + ((axe.violations||[]).length) + ' | Passes: ' + (axe.passes||0),
+      'LCP: ' + (cwv.lcp||0) + 'ms | CLS: ' + (cwv.cls||0) + ' | TBT: ' + (cwv.tbt||0) + 'ms | TTFB: ' + (cwv.ttfb||0) + 'ms',
+      'Resources: ' + (cwv.resources||0) + ' | Transfer: ' + (cwv.transfer_kb||0) + 'KB'
+    ].forEach(function(l){ chk(6); doc.text(safeText(l), pad, y); y += 5; });
+
+    // ── AI Voice Summary ──
+    if (d.voice_summary) {
+      sectionTitle('AI Voice Summary');
+      doc.setTextColor(136,136,170); doc.setFontSize(8); doc.setFont('helvetica','italic');
+      var sl = doc.splitTextToSize(safeText(d.voice_summary), W-pad*2);
+      sl.forEach(function(line){ chk(6); doc.text(line, pad, y); y += 4.5; });
+    }
+
+    // ── WCAG Violations ──
+    var viols = axe.violations || [];
+    if (viols.length) {
+      sectionTitle('WCAG 2.1 Violations (' + viols.length + ')');
+      viols.forEach(function(v) {
+        chk(14);
+        var imp = (v.impact||'').toUpperCase();
+        if (imp==='CRITICAL') doc.setTextColor(255,71,87);
+        else if (imp==='SERIOUS') doc.setTextColor(255,120,80);
+        else if (imp==='MODERATE') doc.setTextColor(255,165,2);
+        else doc.setTextColor(100,200,150);
+        doc.setFont('helvetica','bold'); doc.setFontSize(8);
+        doc.text(safeText('['+imp+'] '+(v.id||'')), pad+2, y); y += 4;
+        doc.setTextColor(200,200,220); doc.setFont('helvetica','normal');
+        var dl = doc.splitTextToSize(safeText(v.description||''), W-pad*2-6);
+        dl.forEach(function(line){ chk(5); doc.text(line, pad+4, y); y+=4; });
+        doc.setTextColor(100,200,150);
+        var hl = doc.splitTextToSize(safeText('Fix: '+(v.help||'')), W-pad*2-6);
+        hl.forEach(function(line){ chk(5); doc.text(line, pad+4, y); y+=4; });
+        y += 2;
+      });
+    }
+
+    // ── Self-Healing Results ──
+    var healed = d.healed_bugs || [];
+    if (healed.length) {
+      sectionTitle('Self-Healing Results (' + healed.length + ' bugs fixed)');
+      healed.forEach(function(h) {
+        chk(16);
+        doc.setTextColor(0,214,143); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+        doc.text(safeText((h.bug_title||'').substring(0,70)), pad+2, y); y += 4;
+        doc.setTextColor(136,136,170); doc.setFont('helvetica','normal');
+        var el = doc.splitTextToSize(safeText(h.fix_explanation||''), W-pad*2-6);
+        el.forEach(function(line){ chk(5); doc.text(line, pad+4, y); y+=4; });
+        if (h.diff_pct) {
+          doc.setTextColor(100,180,255);
+          doc.text(safeText('Pixel diff: ' + h.diff_pct + '% of pixels changed'), pad+4, y); y += 4;
+        }
+        y += 2;
+      });
+    }
+
+    // ── Per-page Bug Report ──
+    sectionTitle('Page Bug Report');
+    (d.results||[]).forEach(function(r, i) {
+      chk(20);
+      doc.setTextColor(162,155,254); doc.setFontSize(9); doc.setFont('helvetica','bold');
+      doc.text(safeText('Page ' + (i+1) + ': ' + (r.page_url||'').substring(0,60)), pad, y); y += 5;
+      doc.setTextColor(136,136,170); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+      doc.text(safeText('Score: ' + (r.overall_score||'N/A') + '/100'), pad, y); y += 5;
+      if (r.summary) {
+        var suml = doc.splitTextToSize(safeText(r.summary), W-pad*2);
+        suml.forEach(function(line){ chk(5); doc.text(line, pad+2, y); y+=4; });
+        y += 2;
+      }
+      var allb = [].concat(
+        (r.critical_bugs||[]).map(function(b){return {title:b.title,fix:b.fix,loc:b.location,sev:'CRITICAL',healed:b.action_taken};}),
+        (r.medium_bugs||[]).map(function(b){return {title:b.title,fix:b.fix,loc:b.location,sev:'MEDIUM',healed:b.action_taken};}),
+        (r.low_bugs||[]).map(function(b){return {title:b.title,fix:b.fix,loc:b.location,sev:'LOW',healed:b.action_taken};})
+      );
+      allb.forEach(function(b) {
+        chk(18);
+        if (b.sev==='CRITICAL') doc.setTextColor(255,71,87);
+        else if (b.sev==='MEDIUM') doc.setTextColor(255,165,2);
+        else doc.setTextColor(100,200,150);
+        doc.setFont('helvetica','bold'); doc.setFontSize(8);
+        var badge = b.healed ? ' [Auto-Fixed]' : '';
+        doc.text(safeText('['+b.sev+'] '+(b.title||'').substring(0,55)+badge), pad+4, y); y += 4;
+        if (b.loc) {
+          doc.setTextColor(100,120,180); doc.setFont('helvetica','italic');
+          doc.text(safeText('Location: '+b.loc), pad+8, y); y += 4;
+        }
+        doc.setTextColor(136,136,170); doc.setFont('helvetica','normal');
+        var fl = doc.splitTextToSize(safeText('Fix: '+(b.fix||'N/A')), W-pad*2-10);
+        fl.forEach(function(line){ chk(5); doc.text(line, pad+8, y); y+=4; });
+        y += 2;
+      });
+      y += 4;
+    });
+
+    // ── Footer on last page ──
+    doc.setTextColor(60,60,90); doc.setFontSize(7);
+    doc.text('Generated by QA Ghost — Gemini AI Visual QA Platform', pad, 290);
+
+    doc.save('qa-ghost-report.pdf');
+  } catch(err) { console.error('PDF error:', err); alert('PDF error: ' + err.message); }
+}
+
+// ── Build Results HTML ────────────────────────────────────────
+function buildResults(d) {
+  scanData = d;
+  voiceText = d.voice_summary || '';
+  var results = d.results || [];
+  var healed = d.healed_bugs || [];
+  var vitals = d.core_web_vitals || {};
+  var axe = d.accessibility_report || {};
+  var viewports = d.viewports || {};
+  var network = d.network_issues || [];
+  var breakdown = d.score_breakdown || [];
+  var score = d.health_score || 0;
+  var grade = d.health_grade || 'F';
+  var healedTitles = {};
+  healed.forEach(function(h) { healedTitles[h.bug_title] = true; });
+  results.forEach(function(r) {
+    [].concat(r.critical_bugs||[], r.medium_bugs||[]).forEach(function(b) {
+      if (healedTitles[b.title]) b._fixed = true;
+    });
+  });
+  var tc = results.reduce(function(a,r){return a+(r.critical_bugs||[]).length;},0);
+  var tm = results.reduce(function(a,r){return a+(r.medium_bugs||[]).length;},0);
+  var wcagV = axe.total_violations || 0;
+  var wcagP = axe.passes || 0;
+  var verdicts = {A:'Excellent — production ready',B:'Good — minor issues',C:'Acceptable — several issues',D:'Needs work — significant issues',F:'Critical — major problems'};
+  var ringC = 2 * Math.PI * 44;
+  var h = '';
+
+  // PDF
+  h += '<button class="pdf-btn fade-up" onclick="exportPDF()">📄 Download PDF Report</button>';
+
+  // Health Score
+  h += '<div class="sec fade-up">';
+  h += '<div class="sec-head"><div class="sec-title"><div class="ico p">📊</div>Overall Health Score</div></div>';
+  h += '<div class="health-card">';
+  h += '<div class="ring-wrap"><svg width="104" height="104" viewBox="0 0 104 104">';
+  h += '<circle cx="52" cy="52" r="44" fill="none" stroke="var(--border2)" stroke-width="6"/>';
+  h += '<circle cx="52" cy="52" r="44" fill="none" stroke="' + sColor(score) + '" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + ringC + '" stroke-dashoffset="' + ringC + '" id="sRing" style="transition:stroke-dashoffset 1.4s cubic-bezier(.23,1,.32,1)"/>';
+  h += '</svg><div class="ring-center"><div class="ring-num" id="sNum" style="color:' + sColor(score) + '">0</div><div class="ring-lbl">/100</div></div></div>';
+  h += '<div>';
+  h += '<div class="grade-row"><div class="grade ' + esc(grade) + '">' + esc(grade) + '</div><div class="verdict">' + esc(verdicts[grade] || '') + '</div></div>';
+  h += '<div class="breakdown">';
+  breakdown.forEach(function(b) {
+    h += '<div class="brow"><div class="blbl">' + esc(b.category) + ' <span style="color:var(--text3)">(' + Math.round(b.weight*100) + '%)</span></div>';
+    h += '<div class="bbar"><div class="bfill" style="width:0%;background:' + bColor(b.score) + '" data-t="' + b.score + '"></div></div>';
+    h += '<div class="bscore">' + b.score + '</div></div>';
+  });
+  h += '</div></div>';
+  h += '<div class="health-stats">';
+  h += '<div class="hstat"><div class="hstat-n" style="color:var(--red2)" id="hn-c">0</div><div class="hstat-l">Critical</div></div>';
+  h += '<div class="hstat"><div class="hstat-n" style="color:var(--amber2)" id="hn-m">0</div><div class="hstat-l">Medium</div></div>';
+  h += '<div class="hstat"><div class="hstat-n" style="color:var(--green2)" id="hn-f">0</div><div class="hstat-l">Auto-Fixed</div></div>';
+  h += '</div></div></div>';
+
+  // Agent Journey
+  var agentSteps = (d.actions_log || []).filter(function(l) {
+    return l.indexOf('Agent decided') > -1 || l.indexOf('Navigated to') > -1 ||
+           l.indexOf('Agentic loop') > -1 || l.indexOf('Agent explored') > -1 ||
+           l.indexOf('Scanning page for bugs') > -1 || l.indexOf('step') > -1 && l.indexOf('URL:') > -1;
+  });
+  if (agentSteps.length > 0) {
+    h += '<div class="sec fade-up">';
+    h += '<div class="sec-head"><div class="sec-title"><div class="ico p">🤖</div>Gemini Agent Journey <span style="font-size:11px;color:var(--text3);font-weight:400">— autonomous navigation decisions</span></div>';
+    h += '<span class="badge bp">' + results.length + ' page' + (results.length !== 1 ? 's' : '') + ' discovered</span></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    agentSteps.forEach(function(step, i) {
+      var isNav = step.indexOf('Navigated') > -1;
+      var isDone = step.indexOf('complete') > -1 || step.indexOf('explored') > -1;
+      var isDecision = step.indexOf('decided') > -1;
+      var isScan = step.indexOf('Scanning') > -1;
+      var col = isNav ? 'var(--green2)' : isDone ? 'var(--accent2)' : isDecision ? 'var(--amber2)' : 'var(--text2)';
+      var icon = isNav ? '🔗' : isDone ? '✅' : isDecision ? '🧠' : isScan ? '👁' : '▸';
+      h += '<div class="agent-step">';
+      h += '<div class="agent-icon">' + icon + '</div>';
+      h += '<div style="flex:1;font-size:12px;color:' + col + ';line-height:1.5">' + esc(step) + '</div>';
+      h += '<div style="font-family:monospace;font-size:10px;color:var(--text3);flex-shrink:0">Step ' + (i+1) + '</div>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Voice
+  h += '<div class="sec fade-up">';
+  h += '<div class="sec-head"><div class="sec-title"><div class="ico p">🔊</div>Gemini AI Voice Report</div></div>';
+  h += '<div class="vcard">';
+  h += '<div class="vico" id="vIco">🔊</div>';
+  h += '<div style="flex:1;">';
+  h += '<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:13px;margin-bottom:2px;">Gemini TTS — Kore Voice</div>';
+  h += '<div style="font-size:12px;color:var(--text2);">' + (d.voice_filename ? 'Gemini TTS audio ready' : 'Browser speech synthesis') + '</div>';
+  if (voiceText) { h += '<div class="vtranscript">' + esc(voiceText) + '</div>'; }
+  if (d.voice_filename) { h += '<audio id="vAudio" src="/voice/' + esc(d.voice_filename) + '" preload="auto" style="display:none"></audio>'; }
+  h += '</div>';
+  h += '<div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">';
+  h += '<div class="wave" id="vWave"><span></span><span></span><span></span><span></span><span></span></div>';
+  h += '<button class="vbtn vbtn-play" id="vPlay" onclick="playAudio()">▶ Play</button>';
+  h += '<button class="vbtn vbtn-stop" id="vStop" onclick="stopAudio()">■ Stop</button>';
+  h += '</div></div></div>';
+
+  // Video
+  if (d.video_filename) {
+    h += '<div class="sec fade-up">';
+    h += '<div class="sec-head"><div class="sec-title"><div class="ico r">🎥</div>Session Recording</div></div>';
+    h += '<div class="vid-card">';
+    h += '<div class="vid-head"><div class="vid-title">Full browser session <div class="rec">REC</div></div></div>';
+        h += '<video id="qaVideo" controls preload="auto" src="/video/' + esc(d.video_filename) + '" style="width:100%;display:block;background:#000;border-radius:0 0 12px 12px;"></video>';
+    h += '</div></div>';
+  }
+
+  // Self-Healing
+  if (healed.length > 0) {
+    h += '<div class="sec fade-up">';
+    h += '<div class="sec-head"><div class="sec-title"><div class="ico g">🔧</div>Self-Healing Engine</div><span class="badge bg">' + healed.length + ' bug' + (healed.length !== 1 ? 's' : '') + ' auto-fixed</span></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:14px;">';
+    healed.forEach(function(hh, i) {
+      var bp = (hh.before_screenshot || '').replace(/\\/g, '/');
+      var ap = (hh.after_screenshot || '').replace(/\\/g, '/');
+      var dp = (hh.diff_path || hh.diff_screenshot || '').replace(/\\/g, '/');
+      h += '<div class="hcard">';
+      h += '<div class="hcard-head"><div class="hnum">' + (i+1) + '</div><div class="hname">' + esc(hh.bug_title || '') + '</div>';
+      h += '<div class="htag htag-fix">' + esc(hh.fix_type || 'auto') + '</div>';
+      if (hh.diff_pct || hh.diff_percent) { h += '<div class="htag htag-diff">' + (hh.diff_pct || hh.diff_percent) + '% pixels changed</div>'; }
+      h += '</div>';
+      h += '<div class="hshots">';
+      h += '<div class="hslot"><div class="hslbl before">⬛ Before</div>';
+      h += bp ? '<img class="hsimg" src="/' + bp + '" loading="lazy" alt="Before">' : '<div class="hsimg" style="display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px;font-family:monospace">No screenshot</div>';
+      h += '</div>';
+      h += '<div class="hslot"><div class="hslbl after">✅ After</div>';
+      h += ap ? '<img class="hsimg" src="/' + ap + '" loading="lazy" alt="After">' : '<div class="hsimg" style="display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px;font-family:monospace">No screenshot</div>';
+      h += '</div>';
+      h += '<div class="hslot"><div class="hslbl diff">🔍 Pixel Diff</div>';
+      h += dp ? '<img class="hsimg" src="/' + dp + '" loading="lazy" alt="Diff">' : '<div class="hsimg" style="display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:11px;font-family:monospace">No diff</div>';
+      h += '</div></div>';
+      h += '<div class="hdetails">';
+      h += '<div class="hbox"><div class="hblbl">Explanation</div><div class="hbval">' + esc(hh.fix_explanation || '') + '</div></div>';
+      h += '<div class="hbox"><div class="hblbl">Injected JS</div><div class="hbcode">' + esc((hh.js_fix || '').substring(0, 280)) + '</div></div>';
+      h += '</div></div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Core Web Vitals
+  var vMs = [
+    {k:'lcp',  lbl:'LCP',  v:vitals.lcp,  unit:'ms', desc:'Largest Contentful Paint', thr:'Good ≤2500ms · Poor >4000ms'},
+    {k:'cls',  lbl:'CLS',  v:vitals.cls,  unit:'',   desc:'Cumulative Layout Shift',  thr:'Good ≤0.1 · Poor >0.25'},
+    {k:'tbt',  lbl:'TBT',  v:vitals.tbt,  unit:'ms', desc:'Total Blocking Time',      thr:'Good ≤200ms · Poor >600ms'},
+    {k:'ttfb', lbl:'TTFB', v:vitals.ttfb, unit:'ms', desc:'Time to First Byte',       thr:'Good ≤800ms · Poor >1800ms'}
+  ];
+  var isSPA = (vitals.lcp === null || vitals.lcp === undefined) && vitals.ttfb > 0;
+  h += '<div class="sec fade-up">';
+  h += '<div class="sec-head"><div class="sec-title"><div class="ico b">⚡</div>Core Web Vitals</div>';
+  if (vitals.transfer_kb) { h += '<span class="badge bb">' + vitals.transfer_kb + 'KB · ' + (vitals.resources||0) + ' resources</span>'; }
+  h += '</div>';
+  h += '<div class="vitals-grid">';
+  vMs.forEach(function(m) {
+    var isN = (m.v === null || m.v === undefined);
+    var cls = isN ? '' : vClass(m.k, m.v);
+    var disp = isN ? 'N/A' : (m.k === 'cls' ? m.v.toFixed(3) : m.v);
+    h += '<div class="vcrd ' + cls + '" style="' + (isN?'opacity:0.55':'') + '">';
+    h += '<div class="vname">' + esc(m.lbl) + ' — ' + esc(m.desc) + '</div>';
+    h += '<div class="vval" style="' + (isN?'color:var(--text3)':'') + '">' + disp + '<span class="vunit">' + (isN?'':m.unit) + '</span></div>';
+    h += '<div class="vthresh">' + vLabel(m.k, m.v) + '<br>' + esc(m.thr) + '</div>';
+    h += '<div class="vbar"><div class="vfill" style="width:' + vBarPct(m.k, m.v) + '%"></div></div>';
+    h += '</div>';
+  });
+  h += '</div>';
+  if (isSPA) {
+    h += '<div style="margin-top:10px;padding:10px 14px;background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;font-size:12px;color:var(--amber2)">⚠ LCP/CLS/TBT show N/A — this site uses client-side rendering. TTFB is always measured correctly.</div>';
+  }
+  h += '</div>';
+
+  // Axe-core
+  var viols = axe.violations || [];
+  var ig = {critical:0, serious:0, moderate:0, minor:0};
+  viols.forEach(function(v) { if (v.impact in ig) ig[v.impact]++; });
+  h += '<div class="sec fade-up">';
+  h += '<div class="sec-head"><div class="sec-title"><div class="ico r">♿</div>WCAG 2.1 Accessibility Audit <span style="font-size:11px;color:var(--text3);font-weight:400">— axe-core</span></div>';
+  h += '<span class="badge ' + (wcagV===0?'bg':'br') + '">' + wcagV + ' violation' + (wcagV!==1?'s':'') + '</span></div>';
+  h += '<div class="axe-sum">';
+  h += '<div class="acrd critical"><div class="acnt">' + ig.critical + '</div><div class="albl">Critical</div></div>';
+  h += '<div class="acrd serious"><div class="acnt">' + ig.serious + '</div><div class="albl">Serious</div></div>';
+  h += '<div class="acrd moderate"><div class="acnt">' + ig.moderate + '</div><div class="albl">Moderate</div></div>';
+  h += '<div class="acrd minor"><div class="acnt">' + ig.minor + '</div><div class="albl">Minor</div></div>';
+  h += '</div>';
+  if (viols.length > 0) {
+    viols.forEach(function(v) {
+      h += '<div class="viol">';
+      h += '<div class="viol-imp imp-' + esc(v.impact||'minor') + '">' + esc(v.impact||'minor') + '</div>';
+      h += '<div style="flex:1;min-width:0;">';
+      h += '<div class="viol-id">' + esc(v.id||'') + ' — ' + (v.nodeCount||0) + ' element(s)</div>';
+      h += '<div class="viol-desc">' + esc(v.description||'') + '</div>';
+      h += '<div class="viol-meta">';
+      (v.tags||v.wcagCriteria||[]).filter(function(t){return t.indexOf('wcag')===0;}).slice(0,3).forEach(function(t){
+        h += '<span class="vtag">' + esc(t) + '</span>';
+      });
+      if (v.helpUrl) { h += '<a class="vlink" href="' + esc(v.helpUrl) + '" target="_blank">→ How to fix</a>'; }
+      h += '</div></div></div>';
+    });
+  } else {
+    h += '<div class="viol"><div style="color:var(--green2);font-size:13px">✅ No WCAG violations detected.</div></div>';
+  }
+  h += '<div style="margin-top:11px;display:inline-flex;align-items:center;gap:7px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:7px;padding:9px 14px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--green2)">✓ ' + wcagP + ' WCAG rules passing</div>';
+  h += '</div>';
+
+  // Viewports
+  var vpList = Object.values(viewports);
+  if (vpList.length > 0) {
+    h += '<div class="sec fade-up">';
+    h += '<div class="sec-head"><div class="sec-title"><div class="ico a">📱</div>Multi-Viewport Responsive Test</div><span class="badge ba">Desktop · Tablet · Mobile</span></div>';
+    h += '<div class="vp-grid">';
+    vpList.forEach(function(vp) {
+      var st = vp.overflow ? 'OVERFLOW' : vp.clipped_elements > 0 ? 'CLIPPED' : 'PASS';
+      var sc = vp.overflow ? 'vp-fail' : vp.clipped_elements > 0 ? 'vp-warn' : 'vp-ok';
+      var imgPath = (vp.path || '').replace(/\\/g, '/');
+      h += '<div class="vp-card">';
+      h += '<div class="vp-head"><div class="vp-name">' + esc(vp.label||'') + '</div><div class="' + sc + '">' + st + '</div></div>';
+      if (imgPath) { h += '<img class="vp-img" src="/' + imgPath + '" loading="lazy" alt="' + esc(vp.label||'') + '">'; }
+      h += '<div class="vp-meta">' + (vp.width||0) + 'x' + (vp.height||0) + (vp.clipped_elements>0?' · '+vp.clipped_elements+' clipped':'') + '</div>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Network errors
+  if (network.length > 0) {
+    h += '<div class="sec fade-up">';
+    h += '<div class="sec-head"><div class="sec-title"><div class="ico r">🌐</div>Network Errors</div><span class="badge br">' + network.length + '</span></div>';
+    h += '<div style="display:flex;flex-direction:column;gap:7px;">';
+    network.slice(0, 8).forEach(function(n) {
+      h += '<div style="display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:11px 14px;">';
+      h += '<span class="badge ' + (n.status>=500?'br':'ba') + '">' + esc(n.status||n.type||'') + '</span>';
+      h += '<span style="font-family:monospace;font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(n.url||'') + '</span>';
+      h += '</div>';
+    });
+    h += '</div></div>';
+  }
+
+  // Pages
+  h += '<div class="sec fade-up">';
+  h += '<div class="sec-head"><div class="sec-title"><div class="ico p">📄</div>Pages &amp; Gemini Bug Report</div><span class="badge bp">' + results.length + ' page' + (results.length!==1?'s':'') + ' scanned</span></div>';
+  h += '<div>';
+  results.forEach(function(r, i) {
+    var cr = r.critical_bugs || [], md = r.medium_bugs || [], lw = r.low_bugs || [];
+    var s = r.overall_score;
+    h += '<div class="pcard' + (i===0?' open':'') + '">';
+    h += '<div class="pcard-top" onclick="this.closest(\'.pcard\').classList.toggle(\'open\')">';
+    h += '<div class="pnum">Page ' + (i+1) + '</div>';
+    h += '<div class="pinfo"><div class="ptitle">' + esc(r.page_title||'') + '</div><div class="purl">' + esc(r.page_url||'') + '</div></div>';
+    h += '<div class="ppills">';
+    if (cr.length) { h += '<span class="pp pp-r">🔴 ' + cr.length + '</span>'; }
+    if (md.length) { h += '<span class="pp pp-a">🟡 ' + md.length + '</span>'; }
+    if (lw.length) { h += '<span class="pp pp-g">🟢 ' + lw.length + '</span>'; }
+    h += '</div>';
+    h += '<div class="pscore" style="color:' + sColor(s) + '">' + (s !== null && s !== undefined ? s : '—') + '</div>';
+    h += '<div class="expand">▼</div>';
+    h += '</div>';
+    h += '<div class="pbody">';
+    if (r._gemini_failed) {
+      h += '<div style="background:var(--amber-bg);border:1px solid var(--amber-border);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--amber2);margin-bottom:12px">⚠ Gemini Vision unavailable (API quota). Accessibility and performance data above are accurate.</div>';
+    }
+    if (r.summary && !r._gemini_failed) { h += '<div class="psummary">' + esc(r.summary) + '</div>'; }
+    if (cr.length) {
+      h += '<div class="bsec-lbl" style="color:var(--red2)">🔴 Critical</div>';
+      cr.forEach(function(b) {
+        h += '<div class="bitem crit"><div class="bname">' + esc(b.title||'');
+        if (b._fixed) { h += '<span class="fixed-tag">✓ Auto-fixed</span>'; }
+        h += '</div><div class="bgrid"><span class="bkey">Location</span><span class="bval">' + esc(b.location||'') + '</span>';
+        h += '<span class="bkey">Issue</span><span class="bval">' + esc(b.description||'') + '</span>';
+        h += '<span class="bkey">Fix</span><span class="bfix">' + esc(b.fix||'') + '</span></div></div>';
+      });
+    }
+    if (md.length) {
+      h += '<div class="bsec-lbl" style="color:var(--amber2)">🟡 Medium</div>';
+      md.forEach(function(b) {
+        h += '<div class="bitem med"><div class="bname">' + esc(b.title||'');
+        if (b._fixed) { h += '<span class="fixed-tag">✓ Auto-fixed</span>'; }
+        h += '</div><div class="bgrid"><span class="bkey">Location</span><span class="bval">' + esc(b.location||'') + '</span>';
+        h += '<span class="bkey">Issue</span><span class="bval">' + esc(b.description||'') + '</span>';
+        h += '<span class="bkey">Fix</span><span class="bfix">' + esc(b.fix||'') + '</span></div></div>';
+      });
+    }
+    if (lw.length) {
+      h += '<div class="bsec-lbl" style="color:var(--green2)">🟢 Low</div>';
+      lw.forEach(function(b) {
+        h += '<div class="bitem low"><div class="bname">' + esc(b.title||'') + '</div>';
+        h += '<div class="bgrid"><span class="bkey">Location</span><span class="bval">' + esc(b.location||'') + '</span>';
+        h += '<span class="bkey">Issue</span><span class="bval">' + esc(b.description||'') + '</span>';
+        h += '<span class="bkey">Fix</span><span class="bfix">' + esc(b.fix||'') + '</span></div></div>';
+      });
+    }
+    if (!cr.length && !md.length && !lw.length && !r._gemini_failed) {
+      h += '<div style="color:var(--green2);font-size:13px">✓ No bugs detected on this page</div>';
+    }
+    h += '</div></div>';
+  });
+  h += '</div></div>';
+
+  // Agent Log
+  if (d.actions_log && d.actions_log.length > 0) {
+    h += '<div class="sec fade-up">';
+    h += '<div class="log-card">';
+    h += '<div class="log-tog" onclick="this.closest(\'.log-card\').classList.toggle(\'open\')">';
+    h += '<div class="sec-title" style="font-size:12px"><div class="ico p" style="width:22px;height:22px;font-size:11px">🤖</div>Agent Actions Log <span style="font-weight:400;color:var(--text3);font-size:11px">' + d.actions_log.length + ' actions</span></div>';
+    h += '<div class="expand">▼</div></div>';
+    h += '<div class="log-body">';
+    d.actions_log.forEach(function(l) { h += '<div class="logln">' + esc(l) + '</div>'; });
+    h += '</div></div></div>';
+  }
+
+  return h;
+}
+
+// ── Display ───────────────────────────────────────────────────
+function displayResults(d) {
+  var w = document.getElementById('resWrap');
+  w.innerHTML = buildResults(d);
+  w.classList.add('on');
+  requestAnimationFrame(function() {
+    reveal(w);
+    setTimeout(function() {
+      var ring = document.getElementById('sRing');
+      var s = d.health_score || 0;
+      if (ring) { ring.style.strokeDashoffset = 2 * Math.PI * 44 * (1 - s / 100); }
+      countUp(document.getElementById('sNum'), s);
+      var tc = (d.results||[]).reduce(function(a,r){return a+(r.critical_bugs||[]).length;},0);
+      var tm = (d.results||[]).reduce(function(a,r){return a+(r.medium_bugs||[]).length;},0);
+      countUp(document.getElementById('hn-c'), tc);
+      countUp(document.getElementById('hn-m'), tm);
+      countUp(document.getElementById('hn-f'), (d.healed_bugs||[]).length, 1000);
+      w.querySelectorAll('.bfill[data-t]').forEach(function(b) {
+        setTimeout(function() { b.style.width = b.dataset.t + '%'; }, 200);
+      });
+    }, 300);
+  });
+  w.scrollIntoView({behavior:'smooth', block:'start'});
+  setTimeout(function() {
+    if (d.voice_filename) { playAudio(); }
+    else if (voiceText) { speechSynthesis.getVoices(); fallbackSpeak(voiceText); }
+  }, 800);
+}
+
+// ── Scan ──────────────────────────────────────────────────────
+document.getElementById('urlIn').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') startScan();
+});
+
+function startScan() {
+  var url = document.getElementById('urlIn').value.trim();
+  if (!url) { alert('Please enter a URL.'); return; }
+  stopAudio();
+  document.getElementById('resWrap').classList.remove('on');
+  document.getElementById('resWrap').innerHTML = '';
+  document.getElementById('errBox').classList.remove('on');
+  document.getElementById('loadPanel').classList.add('on');
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('prog').style.width = '0%';
+  document.getElementById('logBox').innerHTML = '';
+  for (var i = 1; i <= 8; i++) {
+    var el = document.getElementById('st' + i);
+    if (el) el.className = 'step wait';
+  }
+  fakeLogIdx = 0;
+  animSteps();
+  fakeLogTimer = setInterval(function() {
+    if (fakeLogIdx < FAKE_LOGS.length) addLog(FAKE_LOGS[fakeLogIdx++]);
+  }, 1800);
+
+  fetch('/scan', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({url: url})
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    clearInterval(fakeLogTimer);
+    document.getElementById('prog').style.width = '100%';
+    setTimeout(function() {
+      document.getElementById('loadPanel').classList.remove('on');
+      if (data.error) {
+        document.getElementById('errMsg').textContent = data.error;
+        document.getElementById('errBox').classList.add('on');
+        console.error('Scan error:', data);
+      } else {
+        displayResults(data);
+      }
+    }, 400);
+  })
+  .catch(function(err) {
+    clearInterval(fakeLogTimer);
+    document.getElementById('loadPanel').classList.remove('on');
+    document.getElementById('errMsg').textContent = 'Connection error: ' + err.message + ' — Make sure the server is running: python app.py';
+    document.getElementById('errBox').classList.add('on');
+  })
+  .finally(function() {
+    document.getElementById('scanBtn').disabled = false;
+  });
+}
+</script>{% endraw %}
+</body>
+</html>

@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+recordings/
+screenshots/
+voice/
+*.webm
+*.wav
+.DS_Store
+venv/
+.venv/
