@@ -158,8 +158,7 @@ The system flow:
 ## Team
 
 - **Pratham Sajnani** — [GitHub](https://github.com/Pratham200320)
-- **Rohan Kumar Singh**
-
+- **Rohan Kumar Singh** — [GitHub](https://github.com/RohanKSingh2002)
 ---
 
 Built for the **Google Gemini Live Agent Hackathon 2026**  
